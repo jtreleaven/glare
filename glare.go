@@ -9,6 +9,14 @@ import (
 
 const baseURL = "https://api.layer.com"
 var client = &http.Client{}
+
+// EditRequest represents the body of a PUT request to the Layer API
+type EditRequest struct {
+    Operation       string      `json:"operation"`
+    Property        string      `json:"property"`
+    Value           string      `json:"value"`
+}
+
 // Layer is the primary struct that acts as the receiver for the API methods
 type Layer struct {
     ID      string
@@ -89,6 +97,157 @@ func (l Layer) CreateConversation(pending Conversation) (Conversation, error) {
     }
 }
 
+// EditConversation will make a request to Layer with an EditRequest body to
+// modify the properties on the given conversation.
+func (l Layer) EditConversation(c Conversation, changes EditRequest) (Conversation, error) {
+    var conversation Conversation
+    url := fmt.Sprintf("%s/apps/%s/conversations/%s", baseURL, l.ID, c.ID)
+    res, err := makeLayerPostRequest(url, l.Token, l.Version, true, changes)
+    if err != nil {
+        return conversation, err
+    } else if res.StatusCode != 200 && res.StatusCode != 201 {
+        return conversation, err
+    }
+    if err = json.NewDecoder(res.Body).Decode(conversation); err != nil {
+        return conversation, err
+    }
+    return conversation, nil
+}
+
+// DeleteConversation will delete an existing conversation and applies
+// globally to all members of the conversation and across devices
+func (l Layer) DeleteConversation(remove Conversation) error {
+    url := fmt.Sprintf("%s/apps/%s/conversations/%s", baseURL, l.ID, remove.ID)
+    res, err := makeLayerDeleteRequest(url, l.Token, l.Version)
+    if err != nil {
+        return err
+    } else if res.StatusCode != 204 {
+        return err
+    }
+    return nil
+}
+
+// SendMessage will take the given Message object and Post that data to the
+// Layer API for the given conversation.
+func (l Layer) SendMessage(m Message, c Conversation) (Message, error) {
+    var message Message
+    url := fmt.Sprintf("%s/apps/%s/conversations/%s/messages", baseURL, l.ID, c.ID)
+    res, err := makeLayerPostRequest(url, l.Token, l.Version, false, m)
+    if err != nil {
+        return message, err
+    } else if res.StatusCode != 201 {
+        return message, err
+    }
+
+    if err = json.NewDecoder(res.Body).Decode(message); err != nil {
+        return message, err
+    }
+
+    return message, nil
+}
+
+// RetrieveMessages will return a slice of messages from the given conversation
+// which pertains to the System perspective.
+func (l Layer) RetrieveMessages(c Conversation) ([]Message, error) {
+    var messages []Message
+    url := fmt.Sprintf("%s/apps/%s/conversations/%s/messages", baseURL, l.ID, c.ID)
+    res, err := makeLayerGetRequest(url, l.Token, l.Version)
+    if err != nil {
+        return messages, err
+    } else if res.StatusCode != 200 {
+        return messages, err
+    }
+
+    if err = json.NewDecoder(res.Body).Decode(messages); err != nil {
+        return messages, err
+    }
+    return messages, nil
+}
+
+// RetrieveMessagesByUser will return a slice of message objects that are
+// associated to the given userID and conversation
+func (l Layer) RetrieveMessagesByUser(userID string, c Conversation) ([]Message, error) {
+    var messages []Message
+    url := fmt.Sprintf("%s/apps/%s/users/%s/conversations/%s/messages", baseURL, l.ID, userID, c.ID)
+    res, err := makeLayerGetRequest(url, l.Token, l.Version)
+    if err != nil {
+        return messages, err
+    } else if res.StatusCode != 200 {
+        return messages, err
+    }
+
+    if err = json.NewDecoder(res.Body).Decode(messages); err != nil {
+        return messages, err
+    }
+    return messages, nil
+}
+
+// DeleteMessage will delete the given message from the given conversation.
+func (l Layer) DeleteMessage(m Message, c Conversation) error {
+    url := fmt.Sprintf("%s/apps/%s/conversations/%s/messages/%s", baseURL, l.ID, c.ID, m.ID)
+    res, err := makeLayerDeleteRequest(url, l.Token, l.Version)
+    if err != nil {
+        return err
+    }
+    return nil
+}
+
+// RegisterIdentity will create a new known user within Layer
+func (l Layer) RegisterIdentity(id string, i Identity) (Identity, error) {
+    var identity Identity
+    url := fmt.Sprintf("%s/apps/%s/users/%s/identity", baseURL, l.ID, id)
+    res, err := makeLayerPostRequest(url, l.Token, l.Version, false, i)
+    if err != nil {
+        return identity, err
+    }
+
+    if err = json.NewDecoder(res.Body).Decode(identity); err != nil {
+        return identity, err
+    }
+    return identity, nil
+}
+
+// UpdateIdentity will change the Identity match the given id with the
+// new value passed into EditRequest.
+func (l Layer) UpdateIdentity(id string, changes EditRequest) (Identity, error) {
+    var identity Identity
+    url := fmt.Sprintf("%s/apps/%s/users/%s/identity", baseURL, l.ID, id)
+    res, err := makeLayerPostRequest(url, l.Token, l.Version, true, changes)
+    if err != nil {
+        return identity, err
+    }
+
+    if err = json.NewDecoder(res.Body).Decode(identity); err != nil {
+        return identity, err
+    }
+    return identity, nil
+}
+
+// RetrieveIdentity will fetch the identity matching the given id from the Layer API
+func (l Layer) RetrieveIdentity(id string) (Identity, error) {
+    var identity Identity
+    url := fmt.Sprintf("%s/apps/%s/users/%s/identity", baseURL, l.ID, id)
+    res, err := makeLayerGetRequest(url, l.Token, l.Version)
+    if err != nil {
+        return identity, err
+    }
+
+    if err = json.NewDecoder(res.Body).Decode(identity); err != nil {
+        return identity, err
+    }
+
+    return identity, nil
+}
+
+// DeleteIdentity will remove an Identity from Layer matching the given ID value
+func (l Layer) DeleteIdentity(id string) error {
+    url := fmt.Sprintf("%s/apps/%s/users/%s/identity", baseURL, l.ID, id)
+    res, err := makeLayerDeleteRequest(url, l.Token, l.Version)
+    if err != nil {
+        return err
+    }
+    return nil
+}
 
 // -------------------- PRIVATE FUNCTIONS -------------------------
 
@@ -119,6 +278,17 @@ func makeLayerPostRequest(url string, token string, version string, isPatch bool
     } else {
         req.Header.Add("Content-Type", "application/json")
     }
+
+    return client.Do(req)
+}
+
+func makeLayerDeleteRequest(url string, token string, version string) (*http.Response, error) {
+    req, err := http.NewRequest("DELETE", url, nil)
+    if err != nil {
+        return &http.Response{}, err
+    }
+    req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+    req.Header.Add("Accept", fmt.Sprintf("application/vnd.layer.webhooks+json; version=%s", version))
 
     return client.Do(req)
 }
