@@ -29,6 +29,10 @@ func New(id string, token string, version string) Layer {
     return Layer{ID: id, Token: token, Version: version}
 }
 
+// -----------------------------------------------------------------------------
+// ------------------------- Conversation Methods ------------------------------
+// -----------------------------------------------------------------------------
+
 // GetConversationsByUser is the method for retrieving all conversations
 // from the perspective of a user.
 func (l Layer) GetConversationsByUser(userID string) ([]Conversation, error) {
@@ -71,7 +75,7 @@ func (l Layer) GetConversationByUser(userID string, conversationID string) (Conv
 // perspective of the system with only the conversation UUID
 func (l Layer) GetConversationByID(conversationID string) (Conversation, error) {
     var conversation Conversation
-    url := fmt.Sprintf("%s/apps/%s/users/%s/conversations/%s", baseURL, l.ID, userID, conversationID)
+    url := fmt.Sprintf("%s/apps/%s/conversations/%s", baseURL, l.ID, conversationID)
     res, err := makeLayerGetRequest(url, l.ID, l.Token)
     if err != nil {
         return conversation, err
@@ -95,6 +99,11 @@ func (l Layer) CreateConversation(pending Conversation) (Conversation, error) {
     if err != nil {
         return conversation, err
     }
+
+    if err = json.NewDecoder(res.Body).Decode(conversation); err != nil {
+        return conversation, err
+    }
+    return conversation, nil
 }
 
 // EditConversation will make a request to Layer with an EditRequest body to
@@ -126,6 +135,10 @@ func (l Layer) DeleteConversation(remove Conversation) error {
     }
     return nil
 }
+
+// -----------------------------------------------------------------------------
+// ---------------------------- Message Methods --------------------------------
+// -----------------------------------------------------------------------------
 
 // SendMessage will take the given Message object and Post that data to the
 // Layer API for the given conversation.
@@ -185,12 +198,16 @@ func (l Layer) RetrieveMessagesByUser(userID string, c Conversation) ([]Message,
 // DeleteMessage will delete the given message from the given conversation.
 func (l Layer) DeleteMessage(m Message, c Conversation) error {
     url := fmt.Sprintf("%s/apps/%s/conversations/%s/messages/%s", baseURL, l.ID, c.ID, m.ID)
-    res, err := makeLayerDeleteRequest(url, l.Token, l.Version)
+    _, err := makeLayerDeleteRequest(url, l.Token, l.Version)
     if err != nil {
         return err
     }
     return nil
 }
+
+// -----------------------------------------------------------------------------
+// --------------------------- Identity Methods --------------------------------
+// -----------------------------------------------------------------------------
 
 // RegisterIdentity will create a new known user within Layer
 func (l Layer) RegisterIdentity(id string, i Identity) (Identity, error) {
@@ -242,14 +259,110 @@ func (l Layer) RetrieveIdentity(id string) (Identity, error) {
 // DeleteIdentity will remove an Identity from Layer matching the given ID value
 func (l Layer) DeleteIdentity(id string) error {
     url := fmt.Sprintf("%s/apps/%s/users/%s/identity", baseURL, l.ID, id)
-    res, err := makeLayerDeleteRequest(url, l.Token, l.Version)
+    _, err := makeLayerDeleteRequest(url, l.Token, l.Version)
     if err != nil {
         return err
     }
     return nil
 }
 
-// -------------------- PRIVATE FUNCTIONS -------------------------
+// -----------------------------------------------------------------------------
+// ---------------------------- WebHook Methods --------------------------------
+// -----------------------------------------------------------------------------
+
+// RegisterWebHook will make a post request with the new webhook and return the
+// newly created Layer API webhook object.
+func (l Layer) RegisterWebHook(created WebHook) (WebHook, error) {
+    var webhook WebHook
+    url := fmt.Sprintf("%s/apps/%s/webhooks", baseURL, l.ID,)
+    res, err := makeLayerPostRequest(url, l.Token, l.Version, false, created)
+    if err != nil {
+        return webhook, err
+    }
+
+    if err = json.NewDecoder(res.Body).Decode(webhook); err != nil {
+        return webhook, err
+    }
+    return webhook, nil
+}
+
+// ListWebHooks will retrieve all existing WebHooks for your Layer Account.
+func (l Layer) ListWebHooks() ([]WebHook, error) {
+    var webhooks []WebHook
+    url := fmt.Sprintf("%s/apps/%s/webhooks", baseURL, l.ID)
+    res, err := makeLayerGetRequest(url, l.Token, l.Version)
+    if err != nil {
+        return webhooks, err
+    }
+
+    if err = json.NewDecoder(res.Body).Decode(webhooks); err != nil {
+        return webhooks, err
+    }
+    return webhooks, nil
+}
+
+// GetWebHook will retrieve an existing WebHook from your Layer Account matching
+// the given ID.
+func (l Layer) GetWebHook(id string) (WebHook, error) {
+    var webhook WebHook
+    url := fmt.Sprintf("%s/apps/%s/webhooks/%s", baseURL, l.ID, id)
+    res, err := makeLayerGetRequest(url, l.Token, l.Version)
+    if err != nil {
+        return webhook, err
+    }
+
+    if err = json.NewDecoder(res.Body).Decode(webhook); err != nil {
+        return webhook, err
+    }
+    return webhook, nil
+}
+
+// ActivateWebHook will make a request to Layer to activate the given WebHook
+func (l Layer) ActivateWebHook(w WebHook) (WebHook, error) {
+    var webhook WebHook
+    url := fmt.Sprintf("%s/apps/%s/webhooks/%s/activate", baseURL, l.ID, w.ID)
+    res, err := makeLayerPostRequest(url, l.Token, l.Version, false, w)
+    if err != nil {
+        return webhook, err
+    }
+
+    if err = json.NewDecoder(res.Body).Decode(webhook); err != nil {
+        return webhook, err
+    }
+
+    return webhook, nil
+}
+
+// DeactivateWebHook will do the opposite of the activate function and deactivate
+// the given webhook to no longer be sent data
+func (l Layer) DeactivateWebHook(w WebHook) (WebHook, error) {
+    var webhook WebHook
+    url := fmt.Sprintf("%s/apps/%s/webhooks/%s/deactivate", baseURL, l.ID, w.ID)
+    res, err := makeLayerPostRequest(url, l.Token, l.Version, false, w)
+    if err != nil {
+        return webhook, err
+    }
+
+    if err = json.NewDecoder(res.Body).Decode(webhook); err != nil {
+        return webhook, err
+    }
+
+    return webhook, nil
+}
+
+// DeleteWebHook will remove the given WebHook instance from your Layer Account
+func (l Layer) DeleteWebHook(w WebHook) error {
+    url := fmt.Sprintf("%s/apps/%s/webhooks/%s", baseURL, l.ID, w.ID)
+    _, err := makeLayerDeleteRequest(url, l.Token, l.Version)
+    if err != nil {
+        return err
+    }
+    return nil
+}
+
+// -----------------------------------------------------------------------------
+// --------------------------- PRIVATE FUNCTIONS -------------------------------
+// -----------------------------------------------------------------------------
 
 func makeLayerGetRequest(url string, token string, version string) (*http.Response, error) {
     req, err := http.NewRequest("GET", url, nil)
