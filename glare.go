@@ -14,7 +14,8 @@ var client = &http.Client{}
 type EditRequest struct {
     Operation       string      `json:"operation"`
     Property        string      `json:"property"`
-    Value           string      `json:"value"`
+    Value           string      `json:"value,omitempty"`
+    Values          []string    `json:"value,omitempty"`
 }
 
 // Layer is the primary struct that acts as the receiver for the API methods
