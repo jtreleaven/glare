@@ -9,10 +9,10 @@ type Message struct {
     ID                  string                  `json:"id"`
     URL                 string                  `json:"url"`
     IsUnread            bool                    `json:"is_unread"`
-    Parts               []map[string]string     `json:"parts"`
+    Parts               []MessagePart           `json:"parts"`
     ReceivedAt          time.Time               `json:"received_at"`
     RecipientStatus     map[string]string       `json:"recipient_status"`
-    Sender              MessageUser             `json:"sender"`
+    Sender              Actor                   `json:"sender"`
     SentAt              time.Time               `json:"send_at"`
     FromConversation    MessageConversation     `json:"conversation"`
 }
@@ -24,9 +24,17 @@ type MessageConversation struct {
     URL     string      `json:"url"`
 }
 
-// MessageUser is a holder for linking a message to the User who sent it
+// Actor is a holder for linking a message to the User who sent it
 // without causing a circular dependency.
-type MessageUser struct {
+type Actor struct {
     Name    string      `json:"name"`
     UserID  string      `json:"user_id"`
+}
+
+// MessagePart represents a single part of a message body.
+type MessagePart struct {
+    ID          string                  `json:"id"`
+    MimeType    string                  `json:"mime_type"`
+    Content     map[string]interface{}  `json:"content"`
+    Body        string                  `json:"body"`
 }

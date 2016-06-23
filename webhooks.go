@@ -17,3 +17,19 @@ type WebHook struct {
     Secret          string                  `json:"secret"`
     Config          map[string]interface{}  `json:"config"`
 }
+
+// A WebHookPayload represents the request body sent from a Layer webhook.
+type WebHookPayload struct {
+	Event          WebHookEvent            `json:"event"`
+	Message        Message                 `json:"message"`
+    Conversation   Conversation            `json:"conversation"`
+	Config         map[string]interface{}  `json:"config"`
+}
+
+// WebHookEvent contains information about the event that caused the webhook to fire.
+type WebHookEvent struct {
+    ID              string      `json:"id"`
+    CreatedAt       time.Time   `json:"created_at"`
+    Type            string      `json:"type"`
+    Actor           Actor       `json:"actor"`
+}
