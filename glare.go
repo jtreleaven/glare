@@ -39,7 +39,7 @@ func New(id string, token string, version string) Layer {
 func (l Layer) GetConversationsByUser(userID string) ([]Conversation, error) {
     var conversations []Conversation
     url := fmt.Sprintf("%s/apps/%s/users/%s/conversations", baseURL, l.ID, userID)
-    res, err := makeLayerGetRequest(url, l.ID, l.Token)
+    res, err := makeLayerGetRequest(url, l.ID, l.Token, false)
     if err != nil {
         return conversations, err
     } else if res.StatusCode != 200 {
@@ -58,7 +58,7 @@ func (l Layer) GetConversationsByUser(userID string) ([]Conversation, error) {
 func (l Layer) GetConversationByUser(userID string, conversationID string) (Conversation, error) {
     var conversation Conversation
     url := fmt.Sprintf("%s/apps/%s/users/%s/conversations/%s", baseURL, l.ID, userID, conversationID)
-    res, err := makeLayerGetRequest(url, l.ID, l.Token)
+    res, err := makeLayerGetRequest(url, l.ID, l.Token, false)
     if err != nil {
         return conversation, err
     } else if res.StatusCode != 200 {
@@ -77,7 +77,7 @@ func (l Layer) GetConversationByUser(userID string, conversationID string) (Conv
 func (l Layer) GetConversationByID(conversationID string) (Conversation, error) {
     var conversation Conversation
     url := fmt.Sprintf("%s/apps/%s/conversations/%s", baseURL, l.ID, conversationID)
-    res, err := makeLayerGetRequest(url, l.ID, l.Token)
+    res, err := makeLayerGetRequest(url, l.ID, l.Token, false)
     if err != nil {
         return conversation, err
     } else if res.StatusCode != 200 {
@@ -96,7 +96,7 @@ func (l Layer) GetConversationByID(conversationID string) (Conversation, error) 
 func (l Layer) CreateConversation(pending Conversation) (Conversation, error) {
     var conversation Conversation
     url := fmt.Sprintf("%s/apps/%s/conversations", baseURL, l.ID)
-    res, err := makeLayerPostRequest(url, l.Token, l.Version, false, pending)
+    res, err := makeLayerPostRequest(url, l.Token, l.Version, false, false, pending)
     if err != nil {
         return conversation, err
     }
@@ -112,7 +112,7 @@ func (l Layer) CreateConversation(pending Conversation) (Conversation, error) {
 func (l Layer) EditConversation(c Conversation, changes EditRequest) (Conversation, error) {
     var conversation Conversation
     url := fmt.Sprintf("%s/apps/%s/conversations/%s", baseURL, l.ID, c.ID)
-    res, err := makeLayerPostRequest(url, l.Token, l.Version, true, changes)
+    res, err := makeLayerPostRequest(url, l.Token, l.Version, true, false, changes)
     if err != nil {
         return conversation, err
     } else if res.StatusCode != 200 && res.StatusCode != 201 {
@@ -128,7 +128,7 @@ func (l Layer) EditConversation(c Conversation, changes EditRequest) (Conversati
 // globally to all members of the conversation and across devices
 func (l Layer) DeleteConversation(remove Conversation) error {
     url := fmt.Sprintf("%s/apps/%s/conversations/%s", baseURL, l.ID, remove.ID)
-    res, err := makeLayerDeleteRequest(url, l.Token, l.Version)
+    res, err := makeLayerDeleteRequest(url, l.Token, l.Version, false)
     if err != nil {
         return err
     } else if res.StatusCode != 204 {
@@ -146,7 +146,7 @@ func (l Layer) DeleteConversation(remove Conversation) error {
 func (l Layer) SendMessage(m Message, c Conversation) (Message, error) {
     var message Message
     url := fmt.Sprintf("%s/apps/%s/conversations/%s/messages", baseURL, l.ID, c.ID)
-    res, err := makeLayerPostRequest(url, l.Token, l.Version, false, m)
+    res, err := makeLayerPostRequest(url, l.Token, l.Version, false, false, m)
     if err != nil {
         return message, err
     } else if res.StatusCode != 201 {
@@ -165,7 +165,7 @@ func (l Layer) SendMessage(m Message, c Conversation) (Message, error) {
 func (l Layer) RetrieveMessages(c Conversation) ([]Message, error) {
     var messages []Message
     url := fmt.Sprintf("%s/apps/%s/conversations/%s/messages", baseURL, l.ID, c.ID)
-    res, err := makeLayerGetRequest(url, l.Token, l.Version)
+    res, err := makeLayerGetRequest(url, l.Token, l.Version, false)
     if err != nil {
         return messages, err
     } else if res.StatusCode != 200 {
@@ -183,7 +183,7 @@ func (l Layer) RetrieveMessages(c Conversation) ([]Message, error) {
 func (l Layer) RetrieveMessagesByUser(userID string, c Conversation) ([]Message, error) {
     var messages []Message
     url := fmt.Sprintf("%s/apps/%s/users/%s/conversations/%s/messages", baseURL, l.ID, userID, c.ID)
-    res, err := makeLayerGetRequest(url, l.Token, l.Version)
+    res, err := makeLayerGetRequest(url, l.Token, l.Version, false)
     if err != nil {
         return messages, err
     } else if res.StatusCode != 200 {
@@ -199,7 +199,7 @@ func (l Layer) RetrieveMessagesByUser(userID string, c Conversation) ([]Message,
 // DeleteMessage will delete the given message from the given conversation.
 func (l Layer) DeleteMessage(m Message, c Conversation) error {
     url := fmt.Sprintf("%s/apps/%s/conversations/%s/messages/%s", baseURL, l.ID, c.ID, m.ID)
-    _, err := makeLayerDeleteRequest(url, l.Token, l.Version)
+    _, err := makeLayerDeleteRequest(url, l.Token, l.Version, false)
     if err != nil {
         return err
     }
@@ -214,7 +214,7 @@ func (l Layer) DeleteMessage(m Message, c Conversation) error {
 func (l Layer) RegisterIdentity(id string, i Identity) (Identity, error) {
     var identity Identity
     url := fmt.Sprintf("%s/apps/%s/users/%s/identity", baseURL, l.ID, id)
-    res, err := makeLayerPostRequest(url, l.Token, l.Version, false, i)
+    res, err := makeLayerPostRequest(url, l.Token, l.Version, false, false, i)
     if err != nil {
         return identity, err
     }
@@ -230,7 +230,7 @@ func (l Layer) RegisterIdentity(id string, i Identity) (Identity, error) {
 func (l Layer) UpdateIdentity(id string, changes EditRequest) (Identity, error) {
     var identity Identity
     url := fmt.Sprintf("%s/apps/%s/users/%s/identity", baseURL, l.ID, id)
-    res, err := makeLayerPostRequest(url, l.Token, l.Version, true, changes)
+    res, err := makeLayerPostRequest(url, l.Token, l.Version, true, false, changes)
     if err != nil {
         return identity, err
     }
@@ -245,7 +245,7 @@ func (l Layer) UpdateIdentity(id string, changes EditRequest) (Identity, error) 
 func (l Layer) RetrieveIdentity(id string) (Identity, error) {
     var identity Identity
     url := fmt.Sprintf("%s/apps/%s/users/%s/identity", baseURL, l.ID, id)
-    res, err := makeLayerGetRequest(url, l.Token, l.Version)
+    res, err := makeLayerGetRequest(url, l.Token, l.Version, false)
     if err != nil {
         return identity, err
     }
@@ -260,7 +260,7 @@ func (l Layer) RetrieveIdentity(id string) (Identity, error) {
 // DeleteIdentity will remove an Identity from Layer matching the given ID value
 func (l Layer) DeleteIdentity(id string) error {
     url := fmt.Sprintf("%s/apps/%s/users/%s/identity", baseURL, l.ID, id)
-    _, err := makeLayerDeleteRequest(url, l.Token, l.Version)
+    _, err := makeLayerDeleteRequest(url, l.Token, l.Version, false)
     if err != nil {
         return err
     }
@@ -276,7 +276,7 @@ func (l Layer) DeleteIdentity(id string) error {
 func (l Layer) RegisterWebHook(created WebHook) (WebHook, error) {
     var webhook WebHook
     url := fmt.Sprintf("%s/apps/%s/webhooks", baseURL, l.ID,)
-    res, err := makeLayerPostRequest(url, l.Token, l.Version, false, created)
+    res, err := makeLayerPostRequest(url, l.Token, l.Version, false, true, created)
     if err != nil {
         return webhook, err
     }
@@ -291,7 +291,7 @@ func (l Layer) RegisterWebHook(created WebHook) (WebHook, error) {
 func (l Layer) ListWebHooks() ([]WebHook, error) {
     var webhooks []WebHook
     url := fmt.Sprintf("%s/apps/%s/webhooks", baseURL, l.ID)
-    res, err := makeLayerGetRequest(url, l.Token, l.Version)
+    res, err := makeLayerGetRequest(url, l.Token, l.Version, true)
     if err != nil {
         return webhooks, err
     }
@@ -307,7 +307,7 @@ func (l Layer) ListWebHooks() ([]WebHook, error) {
 func (l Layer) GetWebHook(id string) (WebHook, error) {
     var webhook WebHook
     url := fmt.Sprintf("%s/apps/%s/webhooks/%s", baseURL, l.ID, id)
-    res, err := makeLayerGetRequest(url, l.Token, l.Version)
+    res, err := makeLayerGetRequest(url, l.Token, l.Version, true)
     if err != nil {
         return webhook, err
     }
@@ -322,7 +322,7 @@ func (l Layer) GetWebHook(id string) (WebHook, error) {
 func (l Layer) ActivateWebHook(w WebHook) (WebHook, error) {
     var webhook WebHook
     url := fmt.Sprintf("%s/apps/%s/webhooks/%s/activate", baseURL, l.ID, w.ID)
-    res, err := makeLayerPostRequest(url, l.Token, l.Version, false, w)
+    res, err := makeLayerPostRequest(url, l.Token, l.Version, false, true, w)
     if err != nil {
         return webhook, err
     }
@@ -339,7 +339,7 @@ func (l Layer) ActivateWebHook(w WebHook) (WebHook, error) {
 func (l Layer) DeactivateWebHook(w WebHook) (WebHook, error) {
     var webhook WebHook
     url := fmt.Sprintf("%s/apps/%s/webhooks/%s/deactivate", baseURL, l.ID, w.ID)
-    res, err := makeLayerPostRequest(url, l.Token, l.Version, false, w)
+    res, err := makeLayerPostRequest(url, l.Token, l.Version, false, true, w)
     if err != nil {
         return webhook, err
     }
@@ -354,7 +354,7 @@ func (l Layer) DeactivateWebHook(w WebHook) (WebHook, error) {
 // DeleteWebHook will remove the given WebHook instance from your Layer Account
 func (l Layer) DeleteWebHook(w WebHook) error {
     url := fmt.Sprintf("%s/apps/%s/webhooks/%s", baseURL, l.ID, w.ID)
-    _, err := makeLayerDeleteRequest(url, l.Token, l.Version)
+    _, err := makeLayerDeleteRequest(url, l.Token, l.Version, true)
     if err != nil {
         return err
     }
@@ -365,17 +365,21 @@ func (l Layer) DeleteWebHook(w WebHook) error {
 // --------------------------- PRIVATE FUNCTIONS -------------------------------
 // -----------------------------------------------------------------------------
 
-func makeLayerGetRequest(url string, token string, version string) (*http.Response, error) {
+func makeLayerGetRequest(url string, token string, version string, isWebhook bool) (*http.Response, error) {
     req, err := http.NewRequest("GET", url, nil)
     if err != nil {
         return &http.Response{}, err
     }
     req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
-    req.Header.Add("Accept", fmt.Sprintf("application/vnd.layer.webhooks+json; version=%s", version))
+    if isWebhook {
+        req.Header.Add("Accept", fmt.Sprintf("application/vnd.layer.webhooks+json; version=%s", version))
+    } else {
+        req.Header.Add("Accept", fmt.Sprintf("application/vnd.layer+json; version=%s", version))
+    }
     return client.Do(req)
 }
 
-func makeLayerPostRequest(url string, token string, version string, isPatch bool, body interface{}) (*http.Response, error) {
+func makeLayerPostRequest(url string, token string, version string, isPatch bool, isWebhook bool, body interface{}) (*http.Response, error) {
     buf, err := json.Marshal(body)
     if err != nil {
         return &http.Response{}, err
@@ -385,7 +389,11 @@ func makeLayerPostRequest(url string, token string, version string, isPatch bool
         return &http.Response{}, err
     }
     req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
-    req.Header.Add("Accept", fmt.Sprintf("application/vnd.layer.webhooks+json; version=%s", version))
+    if isWebhook {
+        req.Header.Add("Accept", fmt.Sprintf("application/vnd.layer.webhooks+json; version=%s", version))
+    } else {
+        req.Header.Add("Accept", fmt.Sprintf("application/vnd.layer+json; version=%s", version))
+    }
     if isPatch {
         req.Header.Add("X-HTTP-Method-Override", "PATCH")
         req.Header.Add("Content-Type", "application/vnd.layer-patch+json")
@@ -396,13 +404,17 @@ func makeLayerPostRequest(url string, token string, version string, isPatch bool
     return client.Do(req)
 }
 
-func makeLayerDeleteRequest(url string, token string, version string) (*http.Response, error) {
+func makeLayerDeleteRequest(url string, token string, version string, isWebhook bool) (*http.Response, error) {
     req, err := http.NewRequest("DELETE", url, nil)
     if err != nil {
         return &http.Response{}, err
     }
     req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
-    req.Header.Add("Accept", fmt.Sprintf("application/vnd.layer.webhooks+json; version=%s", version))
+    if isWebhook {
+        req.Header.Add("Accept", fmt.Sprintf("application/vnd.layer.webhooks+json; version=%s", version))
+    } else {
+        req.Header.Add("Accept", fmt.Sprintf("application/vnd.layer+json; version=%s", version))
+    }
 
     return client.Do(req)
 }
