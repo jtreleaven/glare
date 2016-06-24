@@ -101,7 +101,7 @@ func (l Layer) CreateConversation(pending Conversation) (Conversation, error) {
         return conversation, err
     }
 
-    if err = json.NewDecoder(res.Body).Decode(conversation); err != nil {
+    if err = json.NewDecoder(res.Body).Decode(&conversation); err != nil {
         return conversation, err
     }
     return conversation, nil
@@ -118,7 +118,7 @@ func (l Layer) EditConversation(c Conversation, changes EditRequest) (Conversati
     } else if res.StatusCode != 200 && res.StatusCode != 201 {
         return conversation, err
     }
-    if err = json.NewDecoder(res.Body).Decode(conversation); err != nil {
+    if err = json.NewDecoder(res.Body).Decode(&conversation); err != nil {
         return conversation, err
     }
     return conversation, nil
@@ -153,7 +153,7 @@ func (l Layer) SendMessage(m Message, c Conversation) (Message, error) {
         return message, err
     }
 
-    if err = json.NewDecoder(res.Body).Decode(message); err != nil {
+    if err = json.NewDecoder(res.Body).Decode(&message); err != nil {
         return message, err
     }
 
@@ -172,7 +172,7 @@ func (l Layer) RetrieveMessages(c Conversation) ([]Message, error) {
         return messages, err
     }
 
-    if err = json.NewDecoder(res.Body).Decode(messages); err != nil {
+    if err = json.NewDecoder(res.Body).Decode(&messages); err != nil {
         return messages, err
     }
     return messages, nil
@@ -190,7 +190,7 @@ func (l Layer) RetrieveMessagesByUser(userID string, c Conversation) ([]Message,
         return messages, err
     }
 
-    if err = json.NewDecoder(res.Body).Decode(messages); err != nil {
+    if err = json.NewDecoder(res.Body).Decode(&messages); err != nil {
         return messages, err
     }
     return messages, nil
@@ -219,7 +219,7 @@ func (l Layer) RegisterIdentity(id string, i Identity) (Identity, error) {
         return identity, err
     }
 
-    if err = json.NewDecoder(res.Body).Decode(identity); err != nil {
+    if err = json.NewDecoder(res.Body).Decode(&identity); err != nil {
         return identity, err
     }
     return identity, nil
@@ -235,7 +235,7 @@ func (l Layer) UpdateIdentity(id string, changes EditRequest) (Identity, error) 
         return identity, err
     }
 
-    if err = json.NewDecoder(res.Body).Decode(identity); err != nil {
+    if err = json.NewDecoder(res.Body).Decode(&identity); err != nil {
         return identity, err
     }
     return identity, nil
@@ -250,7 +250,7 @@ func (l Layer) RetrieveIdentity(id string) (Identity, error) {
         return identity, err
     }
 
-    if err = json.NewDecoder(res.Body).Decode(identity); err != nil {
+    if err = json.NewDecoder(res.Body).Decode(&identity); err != nil {
         return identity, err
     }
 
@@ -281,7 +281,7 @@ func (l Layer) RegisterWebHook(created WebHook) (WebHook, error) {
         return webhook, err
     }
 
-    if err = json.NewDecoder(res.Body).Decode(webhook); err != nil {
+    if err = json.NewDecoder(res.Body).Decode(&webhook); err != nil {
         return webhook, err
     }
     return webhook, nil
@@ -296,7 +296,7 @@ func (l Layer) ListWebHooks() ([]WebHook, error) {
         return webhooks, err
     }
 
-    if err = json.NewDecoder(res.Body).Decode(webhooks); err != nil {
+    if err = json.NewDecoder(res.Body).Decode(&webhooks); err != nil {
         return webhooks, err
     }
     return webhooks, nil
@@ -312,7 +312,7 @@ func (l Layer) GetWebHook(id string) (WebHook, error) {
         return webhook, err
     }
 
-    if err = json.NewDecoder(res.Body).Decode(webhook); err != nil {
+    if err = json.NewDecoder(res.Body).Decode(&webhook); err != nil {
         return webhook, err
     }
     return webhook, nil
@@ -327,7 +327,7 @@ func (l Layer) ActivateWebHook(w WebHook) (WebHook, error) {
         return webhook, err
     }
 
-    if err = json.NewDecoder(res.Body).Decode(webhook); err != nil {
+    if err = json.NewDecoder(res.Body).Decode(&webhook); err != nil {
         return webhook, err
     }
 
@@ -344,7 +344,7 @@ func (l Layer) DeactivateWebHook(w WebHook) (WebHook, error) {
         return webhook, err
     }
 
-    if err = json.NewDecoder(res.Body).Decode(webhook); err != nil {
+    if err = json.NewDecoder(res.Body).Decode(&webhook); err != nil {
         return webhook, err
     }
 
