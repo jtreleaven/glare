@@ -42,8 +42,8 @@ func (l Layer) GetConversationsByUser(userID string) ([]Conversation, error) {
     res, err := makeLayerGetRequest(url, l.ID, l.Token, false)
     if err != nil {
         return conversations, err
-    } else if res.StatusCode != 200 {
-        return conversations, fmt.Errorf("Status Code: %d, Status: %s", res.StatusCode, res.Status)
+    } else if res.StatusCode < 200 || res.StatusCode > 299 {
+        return conversations, fmt.Errorf("Status Code: %d, Status: %s\n%+v\n", res.StatusCode, res.Status, res)
     }
 
     if err = json.NewDecoder(res.Body).Decode(&conversations); err != nil {
