@@ -27,7 +27,7 @@ type Layer struct {
 
 // New is a convenience method for easily creating
 func New(id string, token string, version string) Layer {
-    return new(Layer{ID: id, Token: token, Version: version})
+    return Layer{ID: id, Token: token, Version: version}
 }
 
 // -----------------------------------------------------------------------------
