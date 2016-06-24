@@ -62,7 +62,7 @@ func (l Layer) GetConversationByUser(userID string, conversationID string) (Conv
     if err != nil {
         return conversation, err
     } else if res.StatusCode < 200 || res.StatusCode > 299 {
-        return conversations, fmt.Errorf("Status Code: %d, Status: %s\n%+v\n", res.StatusCode, res.Status, res)
+        return conversation, fmt.Errorf("Status Code: %d, Status: %s\n%+v\n", res.StatusCode, res.Status, res)
     }
 
     if err = json.NewDecoder(res.Body).Decode(&conversation); err != nil {
@@ -81,7 +81,7 @@ func (l Layer) GetConversationByID(conversationID string) (Conversation, error) 
     if err != nil {
         return conversation, err
     } else if res.StatusCode < 200 || res.StatusCode > 299 {
-        return conversations, fmt.Errorf("Status Code: %d, Status: %s\n%+v\n", res.StatusCode, res.Status, res)
+        return conversation, fmt.Errorf("Status Code: %d, Status: %s\n%+v\n", res.StatusCode, res.Status, res)
     }
 
     if err = json.NewDecoder(res.Body).Decode(&conversation); err != nil {
