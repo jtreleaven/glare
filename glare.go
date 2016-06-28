@@ -150,9 +150,8 @@ func (l Layer) SendMessage(m Message, c Conversation) (Message, error) {
     if err != nil {
         return message, err
     } else if res.StatusCode != 201 {
-        return message, err
+        return message, fmt.Errorf("Unable to send message to layer, got response code %d", res.StatusCode)
     }
-
     if err = json.NewDecoder(res.Body).Decode(&message); err != nil {
         return message, err
     }

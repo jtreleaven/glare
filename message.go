@@ -27,8 +27,8 @@ type MessageConversation struct {
 // Actor is a holder for linking a message to the User who sent it
 // without causing a circular dependency.
 type Actor struct {
-    Name    string      `json:"name"`
-    UserID  string      `json:"user_id"`
+    Name    string      `json:"name,omitempty"`
+    UserID  string      `json:"user_id,omitempty"`
 }
 
 // MessagePart represents a single part of a message body.
