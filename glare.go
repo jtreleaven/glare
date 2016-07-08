@@ -14,8 +14,7 @@ var client = &http.Client{}
 type EditRequest struct {
     Operation       string      `json:"operation"`
     Property        string      `json:"property"`
-    Value           string      `json:"value,omitempty"`
-    Values          []string    `json:"value,omitempty"`
+    Value           interface{} `json:"value"`
 }
 
 // Layer is the primary struct that acts as the receiver for the API methods
@@ -109,7 +108,7 @@ func (l Layer) CreateConversation(pending Conversation) (Conversation, error) {
 
 // EditConversation will make a request to Layer with an EditRequest body to
 // modify the properties on the given conversation.
-func (l Layer) EditConversation(c Conversation, changes EditRequest) (Conversation, error) {
+func (l Layer) EditConversation(c Conversation, changes []EditRequest) (Conversation, error) {
     var conversation Conversation
     url := fmt.Sprintf("%s/apps/%s/conversations/%s", baseURL, l.ID, c.ID)
     res, err := makeLayerPostRequest(url, l.Token, l.Version, true, false, changes)
