@@ -24,6 +24,11 @@ type Layer struct {
     Version string
 }
 
+// ExtractUUID returns the 36 character uuid value at the end of a layer id.
+func ExtractUUID(id string) string {
+    return id[len(id) - 36:]
+}
+
 // New is a convenience method for easily creating
 func New(id string, token string, version string) Layer {
     return Layer{ID: id, Token: token, Version: version}
