@@ -10,7 +10,7 @@ type Conversation struct {
     MessagesURL         string                  `json:"messages_url"`
     CreatedAt           time.Time               `json:"created_at"`
     Participants        []string                `json:"participants"`
-    MetaData            map[string]interface{}  `json:"metadata"`
+    MetaData            interface{}             `json:"metadata"`
     Distinct            bool                    `json:"distinct"`
     LastMessage         Message                 `json:"last_message"`
     UnreadMessageCount  int                     `json:"unread_message_count"`
