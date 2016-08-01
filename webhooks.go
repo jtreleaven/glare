@@ -18,10 +18,16 @@ type WebHook struct {
     Config          map[string]interface{}  `json:"config"`
 }
 
-// A WebHookPayload represents the request body sent from a Layer webhook.
-type WebHookPayload struct {
+// A WebHookMessagePayload represents the request body sent from a Layer webhook.
+type WebHookMessagePayload struct {
 	Event          WebHookEvent            `json:"event"`
 	Message        Message                 `json:"message"`
+	Config         map[string]interface{}  `json:"config"`
+}
+
+// A WebHookConversationPayload represents the request body sent from a Layer webhook.
+type WebHookConversationPayload struct {
+	Event          WebHookEvent            `json:"event"`
     Conversation   Conversation            `json:"conversation"`
 	Config         map[string]interface{}  `json:"config"`
 }
