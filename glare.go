@@ -27,6 +27,9 @@ type Layer struct {
 
 // ExtractUUID returns the 36 character uuid value at the end of a layer id.
 func ExtractUUID(id string) string {
+	if len(id) < 36 {
+		return id
+	}
 	return id[len(id)-36:]
 }
 
