@@ -215,18 +215,13 @@ func (l Layer) DeleteMessage(m Message, c Conversation) error {
 // -----------------------------------------------------------------------------
 
 // RegisterIdentity will create a new known user within Layer
-func (l Layer) RegisterIdentity(id string, i Identity) (Identity, error) {
-	var identity Identity
+func (l Layer) RegisterIdentity(id string, i Identity) error {
 	url := fmt.Sprintf("%s/apps/%s/users/%s/identity", baseURL, l.ID, id)
-	res, err := makeLayerPostRequest(url, l.Token, l.Version, false, false, i)
+	_, err := makeLayerPostRequest(url, l.Token, l.Version, false, false, i)
 	if err != nil {
-		return identity, err
+		return err
 	}
-
-	if err = json.NewDecoder(res.Body).Decode(&identity); err != nil {
-		return identity, err
-	}
-	return identity, nil
+	return nil
 }
 
 // UpdateIdentity will change the Identity match the given id with the
