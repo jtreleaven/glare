@@ -221,10 +221,7 @@ func (l Layer) DeleteMessage(m Message, c Conversation) error {
 func (l Layer) RegisterIdentity(id string, i Identity) error {
 	url := fmt.Sprintf("%s/apps/%s/users/%s/identity", baseURL, l.ID, id)
 	_, err := makeLayerPostRequest(url, l.Token, l.Version, false, false, i)
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 // UpdateIdentity will change the Identity match the given id with the
@@ -263,10 +260,7 @@ func (l Layer) RetrieveIdentity(id string) (Identity, error) {
 func (l Layer) DeleteIdentity(id string) error {
 	url := fmt.Sprintf("%s/apps/%s/users/%s/identity", baseURL, l.ID, id)
 	_, err := makeLayerDeleteRequest(url, l.Token, l.Version, false)
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 // -----------------------------------------------------------------------------
@@ -357,10 +351,7 @@ func (l Layer) DeactivateWebHook(w WebHook) (WebHook, error) {
 func (l Layer) DeleteWebHook(w WebHook) error {
 	url := fmt.Sprintf("%s/apps/%s/webhooks/%s", baseURL, l.ID, w.ID)
 	_, err := makeLayerDeleteRequest(url, l.Token, l.Version, true)
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 // -----------------------------------------------------------------------------
