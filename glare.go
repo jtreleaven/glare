@@ -4,12 +4,28 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/http"
+	"time"
 )
 
 const baseURL = "https://api.layer.com"
 
-var client = &http.Client{}
+var transporter http.RoundTripper = &http.Transport{
+	Proxy: http.ProxyFromEnvironment,
+	DialContext: (&net.Dialer{
+		Timeout:   30 * time.Second,
+		KeepAlive: 1 * time.Second,
+	}).DialContext,
+	MaxIdleConns:          1,
+	IdleConnTimeout:       1 * time.Second,
+	TLSHandshakeTimeout:   10 * time.Second,
+	ExpectContinueTimeout: 0,
+}
+
+var client = &http.Client{
+	Transport: transporter,
+}
 
 // EditRequest represents the body of a PUT request to the Layer API
 type EditRequest struct {
