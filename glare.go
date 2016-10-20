@@ -4,28 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"net"
 	"net/http"
-	"time"
 )
 
 const baseURL = "https://api.layer.com"
 
-var transporter http.RoundTripper = &http.Transport{
-	Proxy: http.ProxyFromEnvironment,
-	DialContext: (&net.Dialer{
-		Timeout:   30 * time.Second,
-		KeepAlive: 1 * time.Second,
-	}).DialContext,
-	MaxIdleConns:          1,
-	IdleConnTimeout:       1 * time.Second,
-	TLSHandshakeTimeout:   10 * time.Second,
-	ExpectContinueTimeout: 0,
-}
-
-var client = &http.Client{
-	Transport: transporter,
-}
+var client = &http.Client{}
 
 // EditRequest represents the body of a PUT request to the Layer API
 type EditRequest struct {
@@ -74,6 +58,10 @@ func (l Layer) GetConversationsByUser(userID string) ([]Conversation, error) {
 		return conversations, err
 	}
 
+	if err = res.Body.Close(); err != nil {
+		return conversations, err
+	}
+
 	return conversations, nil
 }
 
@@ -90,6 +78,10 @@ func (l Layer) GetConversationByUser(userID string, conversationID string) (Conv
 	}
 
 	if err = json.NewDecoder(res.Body).Decode(&conversation); err != nil {
+		return conversation, err
+	}
+
+	if err = res.Body.Close(); err != nil {
 		return conversation, err
 	}
 
@@ -112,6 +104,10 @@ func (l Layer) GetConversationByID(conversationID string) (Conversation, error) 
 		return conversation, err
 	}
 
+	if err = res.Body.Close(); err != nil {
+		return conversation, err
+	}
+
 	return conversation, nil
 }
 
@@ -128,6 +124,11 @@ func (l Layer) CreateConversation(pending Conversation) (Conversation, error) {
 	if err = json.NewDecoder(res.Body).Decode(&conversation); err != nil {
 		return conversation, err
 	}
+
+	if err = res.Body.Close(); err != nil {
+		return conversation, err
+	}
+
 	return conversation, nil
 }
 
@@ -145,6 +146,9 @@ func (l Layer) EditConversation(c Conversation, changes []EditRequest) (Conversa
 	if err = json.NewDecoder(res.Body).Decode(&conversation); err != nil {
 		return conversation, err
 	}
+	if err = res.Body.Close(); err != nil {
+		return conversation, err
+	}
 	return conversation, nil
 }
 
@@ -156,6 +160,9 @@ func (l Layer) DeleteConversation(remove Conversation) error {
 	if err != nil {
 		return err
 	} else if res.StatusCode != 204 {
+		return err
+	}
+	if err = res.Body.Close(); err != nil {
 		return err
 	}
 	return nil
@@ -180,6 +187,10 @@ func (l Layer) SendMessage(m Message, c Conversation) (Message, error) {
 		return message, err
 	}
 
+	if err = res.Body.Close(); err != nil {
+		return message, err
+	}
+
 	return message, nil
 }
 
@@ -198,6 +209,11 @@ func (l Layer) RetrieveMessages(c Conversation) ([]Message, error) {
 	if err = json.NewDecoder(res.Body).Decode(&messages); err != nil {
 		return messages, err
 	}
+
+	if err = res.Body.Close(); err != nil {
+		return messages, err
+	}
+
 	return messages, nil
 }
 
@@ -216,16 +232,26 @@ func (l Layer) RetrieveMessagesByUser(userID string, c Conversation) ([]Message,
 	if err = json.NewDecoder(res.Body).Decode(&messages); err != nil {
 		return messages, err
 	}
+
+	if err = res.Body.Close(); err != nil {
+		return messages, err
+	}
+
 	return messages, nil
 }
 
 // DeleteMessage will delete the given message from the given conversation.
 func (l Layer) DeleteMessage(m Message, c Conversation) error {
 	url := fmt.Sprintf("%s/apps/%s/conversations/%s/messages/%s", baseURL, l.ID, c.ID, m.ID)
-	_, err := makeLayerDeleteRequest(url, l.Token, l.Version, false)
+	res, err := makeLayerDeleteRequest(url, l.Token, l.Version, false)
 	if err != nil {
 		return err
 	}
+
+	if err = res.Body.Close(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -236,7 +262,10 @@ func (l Layer) DeleteMessage(m Message, c Conversation) error {
 // RegisterIdentity will create a new known user within Layer
 func (l Layer) RegisterIdentity(id string, i Identity) error {
 	url := fmt.Sprintf("%s/apps/%s/users/%s/identity", baseURL, l.ID, id)
-	_, err := makeLayerPostRequest(url, l.Token, l.Version, false, false, i)
+	res, err := makeLayerPostRequest(url, l.Token, l.Version, false, false, i)
+	if err = res.Body.Close(); err != nil {
+		return err
+	}
 	return err
 }
 
@@ -253,6 +282,11 @@ func (l Layer) UpdateIdentity(id string, changes EditRequest) (Identity, error) 
 	if err = json.NewDecoder(res.Body).Decode(&identity); err != nil {
 		return identity, err
 	}
+
+	if err = res.Body.Close(); err != nil {
+		return identity, err
+	}
+
 	return identity, nil
 }
 
@@ -269,14 +303,24 @@ func (l Layer) RetrieveIdentity(id string) (Identity, error) {
 		return identity, err
 	}
 
+	if err = res.Body.Close(); err != nil {
+		return identity, err
+	}
+
 	return identity, nil
 }
 
 // DeleteIdentity will remove an Identity from Layer matching the given ID value
 func (l Layer) DeleteIdentity(id string) error {
 	url := fmt.Sprintf("%s/apps/%s/users/%s/identity", baseURL, l.ID, id)
-	_, err := makeLayerDeleteRequest(url, l.Token, l.Version, false)
-	return err
+	res, err := makeLayerDeleteRequest(url, l.Token, l.Version, false)
+	if err != nil {
+		return err
+	}
+	if err = res.Body.Close(); err != nil {
+		return err
+	}
+	return nil
 }
 
 // -----------------------------------------------------------------------------
@@ -296,6 +340,11 @@ func (l Layer) RegisterWebHook(created WebHook) (WebHook, error) {
 	if err = json.NewDecoder(res.Body).Decode(&webhook); err != nil {
 		return webhook, err
 	}
+
+	if err = res.Body.Close(); err != nil {
+		return webhook, err
+	}
+
 	return webhook, nil
 }
 
@@ -311,6 +360,11 @@ func (l Layer) ListWebHooks() ([]WebHook, error) {
 	if err = json.NewDecoder(res.Body).Decode(&webhooks); err != nil {
 		return webhooks, err
 	}
+
+	if err = res.Body.Close(); err != nil {
+		return webhooks, err
+	}
+
 	return webhooks, nil
 }
 
@@ -327,6 +381,11 @@ func (l Layer) GetWebHook(id string) (WebHook, error) {
 	if err = json.NewDecoder(res.Body).Decode(&webhook); err != nil {
 		return webhook, err
 	}
+
+	if err = res.Body.Close(); err != nil {
+		return webhook, err
+	}
+
 	return webhook, nil
 }
 
@@ -340,6 +399,10 @@ func (l Layer) ActivateWebHook(w WebHook) (WebHook, error) {
 	}
 
 	if err = json.NewDecoder(res.Body).Decode(&webhook); err != nil {
+		return webhook, err
+	}
+
+	if err = res.Body.Close(); err != nil {
 		return webhook, err
 	}
 
@@ -360,14 +423,25 @@ func (l Layer) DeactivateWebHook(w WebHook) (WebHook, error) {
 		return webhook, err
 	}
 
+	if err = res.Body.Close(); err != nil {
+		return webhook, err
+	}
+
 	return webhook, nil
 }
 
 // DeleteWebHook will remove the given WebHook instance from your Layer Account
 func (l Layer) DeleteWebHook(w WebHook) error {
 	url := fmt.Sprintf("%s/apps/%s/webhooks/%s", baseURL, l.ID, w.ID)
-	_, err := makeLayerDeleteRequest(url, l.Token, l.Version, true)
-	return err
+	res, err := makeLayerDeleteRequest(url, l.Token, l.Version, true)
+	if err != nil {
+		return err
+	}
+
+	if err = res.Body.Close(); err != nil {
+		return err
+	}
+	return nil
 }
 
 // -----------------------------------------------------------------------------
