@@ -15,13 +15,13 @@ type Message struct {
 		Content  map[string]interface{} `json:"content"`
 		Body     string                 `json:"body"`
 	} `json:"parts"`
-	ReceivedAt      time.Time         `json:"received_at"`
+	ReceivedAt      *time.Time        `json:"received_at,omitempty"`
 	RecipientStatus map[string]string `json:"recipient_status"`
 	Sender          struct {
 		Name   string `json:"name,omitempty"`
 		UserID string `json:"user_id,omitempty"`
 	} `json:"sender"`
-	SentAt           time.Time `json:"send_at"`
+	SentAt           *time.Time `json:"send_at,omitempty"`
 	FromConversation struct {
 		ID  string `json:"id"`
 		URL string `json:"url"`

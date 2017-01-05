@@ -9,7 +9,7 @@ type WebHook struct {
 	ID        string                 `json:"id"`
 	URL       string                 `json:"url"`
 	Status    string                 `json:"status"`
-	CreatedAt time.Time              `json:"created_at"`
+	CreatedAt *time.Time             `json:"created_at,omitempty"`
 	Version   string                 `json:"version"`
 	TargetURL string                 `json:"target_url"`
 	Events    []string               `json:"events"`
@@ -20,9 +20,9 @@ type WebHook struct {
 // A WebHookMessagePayload represents the request body sent from a Layer webhook.
 type WebHookMessagePayload struct {
 	Event struct {
-		ID        string    `json:"id"`
-		CreatedAt time.Time `json:"created_at"`
-		Type      string    `json:"type"`
+		ID        string     `json:"id"`
+		CreatedAt *time.Time `json:"created_at,omitempty"`
+		Type      string     `json:"type"`
 		Actor     struct {
 			Name   string `json:"name,omitempty"`
 			UserID string `json:"user_id,omitempty"`
@@ -35,9 +35,9 @@ type WebHookMessagePayload struct {
 // A WebHookConversationPayload represents the request body sent from a Layer webhook.
 type WebHookConversationPayload struct {
 	Event struct {
-		ID        string    `json:"id"`
-		CreatedAt time.Time `json:"created_at"`
-		Type      string    `json:"type"`
+		ID        string     `json:"id"`
+		CreatedAt *time.Time `json:"created_at,omitempty"`
+		Type      string     `json:"type"`
 		Actor     struct {
 			Name   string `json:"name,omitempty"`
 			UserID string `json:"user_id,omitempty"`
@@ -49,9 +49,9 @@ type WebHookConversationPayload struct {
 
 // WebHookEvent contains information about the event that caused the webhook to fire.
 type WebHookEvent struct {
-	ID        string    `json:"id"`
-	CreatedAt time.Time `json:"created_at"`
-	Type      string    `json:"type"`
+	ID        string     `json:"id"`
+	CreatedAt *time.Time `json:"created_at,omitempty"`
+	Type      string     `json:"type"`
 	Actor     struct {
 		Name   string `json:"name,omitempty"`
 		UserID string `json:"user_id,omitempty"`

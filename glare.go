@@ -47,7 +47,7 @@ func New(id string, token string, version string) Layer {
 func (l Layer) GetConversationsByUser(userID string) ([]Conversation, error) {
 	var conversations []Conversation
 	url := fmt.Sprintf("%s/apps/%s/users/%s/conversations", baseURL, l.ID, userID)
-	res, err := makeLayerGetRequest(url, l.ID, l.Token, false)
+	res, err := makeLayerGetRequest(url, l.Token, l.Version, false)
 	if err != nil {
 		return conversations, err
 	} else if res.StatusCode < 200 || res.StatusCode > 299 {
@@ -70,7 +70,7 @@ func (l Layer) GetConversationsByUser(userID string) ([]Conversation, error) {
 func (l Layer) GetConversationByUser(userID string, conversationID string) (Conversation, error) {
 	var conversation Conversation
 	url := fmt.Sprintf("%s/apps/%s/users/%s/conversations/%s", baseURL, l.ID, userID, conversationID)
-	res, err := makeLayerGetRequest(url, l.ID, l.Token, false)
+	res, err := makeLayerGetRequest(url, l.Token, l.Version, false)
 	if err != nil {
 		return conversation, err
 	} else if res.StatusCode < 200 || res.StatusCode > 299 {
@@ -93,7 +93,7 @@ func (l Layer) GetConversationByUser(userID string, conversationID string) (Conv
 func (l Layer) GetConversationByID(conversationID string) (Conversation, error) {
 	var conversation Conversation
 	url := fmt.Sprintf("%s/apps/%s/conversations/%s", baseURL, l.ID, conversationID)
-	res, err := makeLayerGetRequest(url, l.ID, l.Token, false)
+	res, err := makeLayerGetRequest(url, l.Token, l.Version, false)
 	if err != nil {
 		return conversation, err
 	} else if res.StatusCode < 200 || res.StatusCode > 299 {
