@@ -4,7 +4,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
+	"net/url"
+	"strconv"
 )
 
 const baseURL = "https://api.layer.com"
@@ -196,24 +199,35 @@ func (l Layer) SendMessage(m Message, c Conversation) (Message, error) {
 
 // RetrieveMessages will return a slice of messages from the given conversation
 // which pertains to the System perspective.
-func (l Layer) RetrieveMessages(c Conversation) ([]Message, error) {
+func (l Layer) RetrieveMessages(c Conversation, pageSize int, fromID string) ([]Message, error) {
 	var messages []Message
-	url := fmt.Sprintf("%s/apps/%s/conversations/%s/messages", baseURL, l.ID, c.ID)
+
+	// Collect potential query params for navigating pages.
+	params := url.Values{}
+	if pageSize > 0 {
+		params.Add("page_size", strconv.Itoa(pageSize))
+	}
+
+	if len(fromID) > 0 {
+		params.Add("from_id", fromID)
+	}
+
+	url := fmt.Sprintf("%s/apps/%s/conversations/%s/messages?%s", baseURL, l.ID, c.ID, params.Encode())
 	res, err := makeLayerGetRequest(url, l.Token, l.Version, false)
 	if err != nil {
 		return messages, err
-	} else if res.StatusCode != 200 {
+	} else if res.StatusCode < 200 || res.StatusCode > 299 {
 		return messages, err
 	}
 
 	if err = json.NewDecoder(res.Body).Decode(&messages); err != nil {
+		log.Printf("")
 		return messages, err
 	}
 
 	if err = res.Body.Close(); err != nil {
 		return messages, err
 	}
-
 	return messages, nil
 }
 
