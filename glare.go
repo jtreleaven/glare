@@ -570,9 +570,18 @@ func (e errors) Error() string {
 func (b Backoff) Do(req *http.Request) (*http.Response, error) {
 	var counter int
 	var errs errors
+	var reqBody []byte
 	loop := true
 
+	// We need to store the request body so that we can reset it after each backoff attempt.
+	if req.Body != nil {
+		reqBody, _ = ioutil.ReadAll(req.Body)
+		req.Body.Close()
+	}
+
 	for loop {
+		// Before we do anything, we have to make sure that the request has a body.
+		req.Body = ioutil.NopCloser(bytes.NewReader(reqBody))
 		// Doing this to simulate a do...while() loop. Need to always execute once.
 		if counter >= b.NumTries {
 			loop = false
