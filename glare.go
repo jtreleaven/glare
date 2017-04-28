@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"log"
+	"io/ioutil"
 	"math"
 	"net/http"
 	"net/url"
@@ -240,7 +240,6 @@ func (l Layer) RetrieveMessages(c Conversation, pageSize int, fromID string) ([]
 	}
 
 	if err = json.NewDecoder(res.Body).Decode(&messages); err != nil {
-		log.Printf("")
 		return messages, err
 	}
 
@@ -535,12 +534,54 @@ func makeLayerDeleteRequest(url string, token string, version string, isWebhook 
 	return backoff.Do(req)
 }
 
+type httpError struct {
+	body       string
+	statusCode int
+	latency    int64
+}
+
+type errors []error
+
+func newHttpError(res *http.Response, latency int64) httpError {
+	body, _ := ioutil.ReadAll(res.Body)
+	return httpError{
+		body:       string(body),
+		statusCode: res.StatusCode,
+		latency:    latency,
+	}
+}
+
+// Error implments the error interface for httpErrors.
+func (e httpError) Error() string {
+	return fmt.Sprintf("Request to Layer failed!\nStatus Code: %d\nResponse Body: %s\nLatency: %d", e.statusCode, e.body, e.latency)
+}
+
+// Error implements the error interface for a slice of errors. It appends all of the individual error inputs with linebreaks separating.
+func (e errors) Error() string {
+	var aggregate string
+	for _, err := range e {
+		aggregate = fmt.Sprintf("%s\n\n%s\n\n", aggregate, err.Error())
+	}
+
+	return aggregate
+}
+
 // Do executes an HTTP request using the given backoff configuration.
 func (b Backoff) Do(req *http.Request) (*http.Response, error) {
 	var counter int
+	var errs errors
+	var reqBody []byte
 	loop := true
 
+	// We need to store the request body so that we can reset it after each backoff attempt.
+	if req.Body != nil {
+		reqBody, _ = ioutil.ReadAll(req.Body)
+		req.Body.Close()
+	}
+
 	for loop {
+		// Before we do anything, we have to make sure that the request has a body.
+		req.Body = ioutil.NopCloser(bytes.NewReader(reqBody))
 		// Doing this to simulate a do...while() loop. Need to always execute once.
 		if counter >= b.NumTries {
 			loop = false
@@ -558,16 +599,24 @@ func (b Backoff) Do(req *http.Request) (*http.Response, error) {
 			time.Sleep(time.Duration(waitTime) * time.Millisecond)
 		}
 
+		// Grabbing system time in milliseconds to calculate latency.
+		startTime := time.Now().UnixNano() / 1000000
 		res, err := client.Do(req)
+		latency := (time.Now().UnixNano() / 1000000) - startTime
+
 		if err == nil {
 			// Need to evaluate if this range of status codes is correct.
 			if res.StatusCode > 199 && res.StatusCode < 399 {
 				return res, nil
+			} else {
+				errs = append(errs, newHttpError(res, latency))
 			}
+		} else {
+			// If something goes wrong with the request itself (rather than a bas status code) we should also push that into errs.
+			errs = append(errs, err)
 		}
-
 		counter++
 	}
 
-	return nil, fmt.Errorf("Request failed after attempting backoff")
+	return nil, errs
 }
