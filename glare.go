@@ -570,6 +570,13 @@ func (e errors) Error() string {
 	return aggregate
 }
 
+type LayerLog struct {
+	URL        string `json:"url"`
+	StatusCode int    `json:"statusCode"`
+	Method     string `json:"method"`
+	Latency    int64  `json:"latency"`
+}
+
 // Do executes an HTTP request using the given backoff configuration.
 func (b Backoff) Do(req *http.Request) (*http.Response, error) {
 	var counter int
@@ -608,8 +615,20 @@ func (b Backoff) Do(req *http.Request) (*http.Response, error) {
 		res, err := client.Do(req)
 		latency := (time.Now().UnixNano() / 1000000) - startTime
 
-		// log information about every completed request to Layer.
-		b.logger.Printf("Layer responded after %dms with status code %d for %s request to %s ", latency, res.StatusCode, req.Method, req.URL.String())
+		layerLog := LayerLog{
+			URL:        req.URL.String(),
+			StatusCode: res.StatusCode,
+			Method:     req.Method,
+			Latency:    latency,
+		}
+
+		logText, _ := json.Marshal(&layerLog)
+		// log information about every completed request to Layer if we were given
+		if b.logger != nil {
+			b.logger.Println(string(logText))
+			// b.logger.Printf("Layer responded after %dms with status code %d for %s request to %s ", latency, res.StatusCode, req.Method, req.URL.String())
+		}
+
 		if err == nil {
 			// Need to evaluate if this range of status codes is correct.
 			if res.StatusCode > 199 && res.StatusCode < 399 {
