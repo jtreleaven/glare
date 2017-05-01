@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"math"
 	"net/http"
 	"net/url"
@@ -36,6 +37,7 @@ type Backoff struct {
 	NumTries int
 	MinTime  int
 	MaxTime  int
+	logger   *log.Logger
 }
 
 // ExtractUUID returns the 36 character uuid value at the end of a layer id.
@@ -52,11 +54,12 @@ func New(id string, token string, version string, backoff Backoff) Layer {
 }
 
 // NewBackoff returns a new Backoff configuration to be used with the Layer client.
-func NewBackoff(numTries, minTime, maxTime int) Backoff {
+func NewBackoff(numTries, minTime, maxTime int, logger *log.Logger) Backoff {
 	return Backoff{
 		NumTries: numTries,
 		MinTime:  minTime,
 		MaxTime:  maxTime,
+		logger:   logger,
 	}
 }
 
@@ -491,6 +494,7 @@ func makeLayerGetRequest(url string, token string, version string, isWebhook boo
 	} else {
 		req.Header.Add("Accept", fmt.Sprintf("application/vnd.layer+json; version=%s", version))
 	}
+
 	return backoff.Do(req)
 }
 
@@ -604,6 +608,8 @@ func (b Backoff) Do(req *http.Request) (*http.Response, error) {
 		res, err := client.Do(req)
 		latency := (time.Now().UnixNano() / 1000000) - startTime
 
+		// log information about every completed request to Layer.
+		b.logger.Printf("Layer responded after %dms with status code %d for %s request to %s ", latency, res.StatusCode, req.Method, req.URL.String())
 		if err == nil {
 			// Need to evaluate if this range of status codes is correct.
 			if res.StatusCode > 199 && res.StatusCode < 399 {
