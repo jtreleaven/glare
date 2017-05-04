@@ -615,9 +615,15 @@ func (b Backoff) Do(req *http.Request) (*http.Response, error) {
 		res, err := client.Do(req)
 		latency := (time.Now().UnixNano() / 1000000) - startTime
 
+		// Have to make sure we have a response object before peeling the status code.
+		var statusCode int
+		if res != nil {
+			statusCode = res.StatusCode
+		}
+
 		layerLog := LayerLog{
 			URL:        req.URL.String(),
-			StatusCode: res.StatusCode,
+			StatusCode: statusCode,
 			Method:     req.Method,
 			Latency:    latency,
 		}
