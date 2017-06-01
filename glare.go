@@ -186,7 +186,7 @@ func (l Layer) DeleteConversation(remove Conversation) error {
 		return err
 	}
 
-	if res.StatusCode != 204 {
+	if res.StatusCode < 200 || res.StatusCode > 299 {
 		msg, err := ioutil.ReadAll(res.Body)
 		if err != nil {
 			return err
