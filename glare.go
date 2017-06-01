@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"math"
 	"net/http"
 	"net/url"
@@ -36,6 +37,7 @@ type Backoff struct {
 	NumTries int
 	MinTime  int
 	MaxTime  int
+	logger   *log.Logger
 }
 
 // ExtractUUID returns the 36 character uuid value at the end of a layer id.
@@ -52,11 +54,12 @@ func New(id string, token string, version string, backoff Backoff) Layer {
 }
 
 // NewBackoff returns a new Backoff configuration to be used with the Layer client.
-func NewBackoff(numTries, minTime, maxTime int) Backoff {
+func NewBackoff(numTries, minTime, maxTime int, logger *log.Logger) Backoff {
 	return Backoff{
 		NumTries: numTries,
 		MinTime:  minTime,
 		MaxTime:  maxTime,
+		logger:   logger,
 	}
 }
 
@@ -491,6 +494,7 @@ func makeLayerGetRequest(url string, token string, version string, isWebhook boo
 	} else {
 		req.Header.Add("Accept", fmt.Sprintf("application/vnd.layer+json; version=%s", version))
 	}
+
 	return backoff.Do(req)
 }
 
@@ -566,6 +570,13 @@ func (e errors) Error() string {
 	return aggregate
 }
 
+type LayerLog struct {
+	URL        string `json:"url"`
+	StatusCode int    `json:"statusCode"`
+	Method     string `json:"method"`
+	Latency    int64  `json:"latency"`
+}
+
 // Do executes an HTTP request using the given backoff configuration.
 func (b Backoff) Do(req *http.Request) (*http.Response, error) {
 	var counter int
@@ -603,6 +614,26 @@ func (b Backoff) Do(req *http.Request) (*http.Response, error) {
 		startTime := time.Now().UnixNano() / 1000000
 		res, err := client.Do(req)
 		latency := (time.Now().UnixNano() / 1000000) - startTime
+
+		// Have to make sure we have a response object before peeling the status code.
+		var statusCode int
+		if res != nil {
+			statusCode = res.StatusCode
+		}
+
+		layerLog := LayerLog{
+			URL:        req.URL.String(),
+			StatusCode: statusCode,
+			Method:     req.Method,
+			Latency:    latency,
+		}
+
+		logText, _ := json.Marshal(&layerLog)
+		// log information about every completed request to Layer if we were given
+		if b.logger != nil {
+			b.logger.Println(string(logText))
+			// b.logger.Printf("Layer responded after %dms with status code %d for %s request to %s ", latency, res.StatusCode, req.Method, req.URL.String())
+		}
 
 		if err == nil {
 			// Need to evaluate if this range of status codes is correct.
