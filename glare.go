@@ -180,17 +180,22 @@ func (l Layer) EditConversation(c Conversation, changes []EditRequest) (Conversa
 // DeleteConversation will delete an existing conversation and applies
 // globally to all members of the conversation and across devices
 func (l Layer) DeleteConversation(remove Conversation) error {
-	url := fmt.Sprintf("%s/apps/%s/conversations/%s", baseURL, l.ID, remove.ID)
+	url := fmt.Sprintf("%s/apps/%s/conversations/%s?mode=destroy", baseURL, l.ID, remove.ID)
 	res, err := makeLayerDeleteRequest(url, l.Token, l.Version, false, l.Backoff)
 	if err != nil {
 		return err
-	} else if res.StatusCode != 204 {
-		return err
 	}
-	if err = res.Body.Close(); err != nil {
-		return err
+
+	if res.StatusCode != 204 {
+		msg, err := ioutil.ReadAll(res.Body)
+		if err != nil {
+			return err
+		}
+
+		return fmt.Errorf("%d: %s", res.StatusCode, string(msg))
 	}
-	return nil
+
+	return res.Body.Close()
 }
 
 // -----------------------------------------------------------------------------
