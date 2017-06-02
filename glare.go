@@ -186,13 +186,15 @@ func (l Layer) DeleteConversation(remove Conversation) error {
 		return err
 	}
 
-	if res.StatusCode != 204 {
-		msg, err := ioutil.ReadAll(res.Body)
-		if err != nil {
-			return err
-		}
+	if res.StatusCode < 200 || res.StatusCode > 299 {
+		if res.StatusCode != 404 {
+			msg, err := ioutil.ReadAll(res.Body)
+			if err != nil {
+				return err
+			}
 
-		return fmt.Errorf("%d: %s", res.StatusCode, string(msg))
+			return fmt.Errorf("%d: %s", res.StatusCode, string(msg))
+		}
 	}
 
 	return res.Body.Close()
@@ -641,6 +643,11 @@ func (b Backoff) Do(req *http.Request) (*http.Response, error) {
 		}
 
 		if err == nil {
+			// For deletes, a 404 response shouldn't be an error.
+			if req.Method == "DELETE" && res.StatusCode == 404 {
+				return res, nil
+			}
+
 			// Need to evaluate if this range of status codes is correct.
 			if res.StatusCode > 199 && res.StatusCode < 399 {
 				return res, nil
