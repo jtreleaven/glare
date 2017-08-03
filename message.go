@@ -6,11 +6,11 @@ import (
 
 // Message represents a single message resource from the Layer API
 type Message struct {
-	ID       string `json:"id"`
+	ID       string `json:"id,omitempty"`
 	URL      string `json:"url"`
 	IsUnread bool   `json:"is_unread"`
 	Parts    []struct {
-		ID       string                 `json:"id"`
+		ID       string                 `json:"id,omitempty"`
 		MimeType string                 `json:"mime_type"`
 		Content  map[string]interface{} `json:"content"`
 		Body     string                 `json:"body"`
